@@ -45,7 +45,7 @@ export default function ChatFrame(props) {
         });
     
         return () => {
-          socket.current.disconnect(); // 컴포넌트 언마운트 시 연결 종료
+          socket.current.disconnect(); // 컴포넌트 언마운트 시 연결 종료, message를 전달해줬었어야 했는데.. 이상하다..
         };
     }, []);
 
