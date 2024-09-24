@@ -1,7 +1,7 @@
 import React, { useState,useEffect } from "react";
 import '../../CSS/RoomModal.css';
 import { useNavigate, useLocation } from "react-router-dom";
-import axios from "axios"; //서버와 통신을 위한 axios 패키지
+// import axios from "axios"; //서버와 통신을 위한 axios 패키지
 // import { response } from "express";
 
 function RoomModal({ isOpen, onClose, onSave }) { // 부모 컴포넌트에서 전달받는 props이다.
@@ -19,7 +19,7 @@ function RoomModal({ isOpen, onClose, onSave }) { // 부모 컴포넌트에서 �
     useEffect(() => {
         if (isOpen) {
             // 서버에서 방 목록을 가져오는 API 호출
-            fetch('http://43.203.141.146:5000/rooms')  // 서버의 API 주소로 변경
+            fetch('http://localhost:5000/rooms')  // 서버의 API 주소로 변경
                 .then(response => {
                     if (!response.ok) {
                         throw new Error('Room list 불러오기 실패');
@@ -41,7 +41,7 @@ function RoomModal({ isOpen, onClose, onSave }) { // 부모 컴포넌트에서 �
     
         // 방 제목이 2자 이상인지 확인 (공백만 있는 경우 포함)
         if (trimmedRoomName.length < 2) {
-            alert("방 제목은 공백을 제외하고 2자 이상이어야 합니다.");
+            alert("방 제목은 2자 이상이어야 합니다.");
             return;
         }
     

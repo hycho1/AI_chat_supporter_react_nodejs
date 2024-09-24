@@ -97,6 +97,7 @@ export default function ChatPage() {
                     roomCount={roomCount} // 방의 사용자 수 전달
                     setMessages={setMessages} // setMessages 전달
                     socket={socket}
+                    setOwnerNickName= {setOwnerNickname}
                 />
             </div>
             <LogFrame />
