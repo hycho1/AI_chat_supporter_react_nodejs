@@ -2,11 +2,9 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import '../../CSS/RoomSettingsModal.css';
 
+const SERVER_URL = 'http://localhost:5001';
 
-
-const SERVER_URL = 'http://localhost:5000';
-
-export default function RoomSettingsModal({ isOpen, onClose, roomDetails, onUpdate, onDelete, socket, isSocketConnected}) {
+export default function RoomSettingsModal({ isOpen, onClose, roomDetails, roomCount, onDelete, socket, isSocketConnected }) {
     const [roomName, setRoomName] = useState(roomDetails?.name || '');
     const [maxCount, setMaxCount] = useState(roomDetails?.maxCount || 10);
     const [password, setPassword] = useState(roomDetails?.password || '');
@@ -14,8 +12,6 @@ export default function RoomSettingsModal({ isOpen, onClose, roomDetails, onUpda
     const [isDeleting, setIsDeleting] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
     const [count, setCount] = useState(roomDetails?.count || 0);
-
-    // const location = useLocation(); // 훅을 호출해 현재 경로와 관련된 상태 정보를 얻습니다.
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -25,114 +21,59 @@ export default function RoomSettingsModal({ isOpen, onClose, roomDetails, onUpda
             setPassword(roomDetails.password);
             setIsPrivate(roomDetails.isPrivate);
             setCount(roomDetails.count);
-            // 필요하다면 이 부분에서 ownerNickname을 로그로 찍어 확인
         }
     }, [roomDetails]);
 
-    console.log("roomDetails:" , roomDetails.ownerNickname);
-    console.log(roomDetails);
+    console.log("roomDetails:", roomDetails.ownerNickname);
+    console.log("현재방 정보", roomDetails);
+    console.log("현재 인원수", roomCount);
+    console.log("현재 최대인원수", maxCount);
 
-    const handleSave = async () => {
-        // console.log(roomDetails.ownerNickname);
-        
-        if (roomName.trim() === '') {
-            alert('방 이름을 입력하세요.');
-            return;
-        }
+
+    const handleSave = () => {
         if (maxCount < 2 || maxCount > 10) {
             alert('최대 인원수는 2에서 10 사이여야 합니다.');
             return;
         }
 
-        setIsSaving(true);
-        try {
-            const response = await fetch(`${SERVER_URL}/update_room`, {
-                
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    originalName: roomDetails.name,
-                    updatedName: roomName,
-                    ownerNickname : roomDetails.ownerNickname,
-                    updatedMaxCount: maxCount,
-                    updatedPassword: password,
-                    updatedIsPrivate: isPrivate,
-                    count : count, // 현재 인원 수 포함
-                }),
-            
-            });
-            const data = await response.json();
-            console.log("서버에게 받은 업데이트 된 방 정보 :", data.data);
-
-            
-            if (response.ok) {
-                setIsSaving(false);
-                alert('방 정보가 업데이트되었습니다.');
-
-                onUpdate({ 
-                    name: roomName,
-                    maxCount, 
-                    password, 
-                    isPrivate,
-                    count : data.data.count, // 여기서 받은 count를 포함
-                    ownerNickname : roomDetails.ownerNickname, //소유자 닉네임
-                    id : data.data.id,
-                    
-                });
-                onClose();
-            
-            } else {
-                const errorData = await response.json();
-                alert('방 정보 업데이트에 실패했습니다.');
-                console.error('Failed to update room:', errorData.error);
-                setIsSaving(false);
-            }
-        } catch (error) {
-            setIsSaving(false);
-            alert('서버와의 통신 중 오류가 발생했습니다.');
-            console.error('Failed to update room:', error);
+        if ( roomCount > maxCount) {
+            alert(`현재 방에 ${roomCount}명이 접속해 있습니다. 최대 인원수를 ${roomCount}명보다 작게 설정할 수 없습니다.`);
+            return;
         }
+    
+        setIsSaving(true);
+    
+        // 서버로 방 정보 업데이트 요청
+        socket.current.emit('update_room', {
+            originalName: roomDetails.name,
+            updatedName: roomDetails.name,  // roomName은 변경되지 않음
+            updatedMaxCount: maxCount,
+            updatedPassword: password,
+            updatedIsPrivate: isPrivate,
+            ownerNickname: roomDetails.ownerNickname
+        });
+    
+        // 방 정보 업데이트 요청 후 UI 처리를 진행 (성공 여부는 별도 처리 없이 바로)
+        setIsSaving(false);
+        alert('방 정보가 업데이트되었습니다.');
+        onClose();
     };
 
     const handleDelete = async () => {
         if (window.confirm("정말로 방을 삭제하시겠습니까?")) {
             setIsDeleting(true);
+            console.log("roomName", roomName);
 
-            try {
-                const response = await fetch(`${SERVER_URL}/delete_room`, {
-                    // credentials : 'include',
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ roomName: roomDetails.name }),
-                });
+            // 소켓을 통한 방 삭제 요청
+            socket.current.emit('delete_room', roomName);
 
-                if (response.ok) {
-                    alert('방이 삭제되었습니다.');
-                    onDelete(roomDetails.name);
-                    onClose();
-                    
-                    // 닉네임과 관련된 정보도 함께 전달하여 ChatListPage로 이동
-                    navigate('/ChatListPage', {
-                        state: {
-                            nickName : roomDetails.ownerNickname, // 닉네임 전달
-                            
-                        }
-                    });
-                } else {
-                    const errorData = await response.json();
-                    alert('방 삭제에 실패했습니다.');
-                    console.error('Failed to delete room:', errorData.error);
-                    setIsDeleting(false);
-                }
-            } catch (error) {
-                setIsDeleting(false);
-                alert('서버와의 통신 중 오류가 발생했습니다.');
-                console.error('Failed to delete room:', error);
-            }
+            // 삭제 요청 후 바로 ChatListPage로 이동
+            navigate('/ChatListPage', {
+                state: {
+                    nickName: roomDetails.nickName,  // 삭제 후 닉네임 정보 전달
+                },
+            });
+            setIsDeleting(false);  // 삭제 상태 리셋
         }
     };
 
@@ -146,8 +87,7 @@ export default function RoomSettingsModal({ isOpen, onClose, roomDetails, onUpda
                         <input
                             type="text"
                             value={roomName}
-                            onChange={(e) => setRoomName(e.target.value)}
-                            disabled={isSaving || isDeleting}
+                            disabled={true}  // 방 이름은 변경 불가
                         />
                     </label>
                     <label>
@@ -169,7 +109,7 @@ export default function RoomSettingsModal({ isOpen, onClose, roomDetails, onUpda
                             type="password"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
-                            disabled={isSaving || isDeleting}
+                            disabled={!isPrivate || isSaving || isDeleting}  // 비공개가 아닐 때 비밀번호 필드 비활성화
                         />
                     </label>
                     <label>

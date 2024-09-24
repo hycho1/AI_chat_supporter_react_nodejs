@@ -3,16 +3,19 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import '../../CSS/ChatListPage.css';
 import '../../CSS/FilteredRoom.css';
 import RoomModal from './RoomModal';
+import PasswordModal from "./PasswordModal";
 
 export default function ChatListPage() {
     const [rooms, setRooms] = useState([]);
     const [filteredRooms, setFilteredRooms] = useState([]);
     const [searchQuery, setSearchQuery] = useState('');
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false); // 비밀번호 모달 상태
+    const [selectedRoom, setSelectedRoom] = useState(null);
 
     const location = useLocation();
     const navigate = useNavigate();
-    const SERVER_URL = 'http://localhost:5000';
+    const SERVER_URL = 'http://localhost:5001';
 
     // 서버에서 방 목록을 가져오는 함수
     const fetchRooms = async () => {
@@ -39,7 +42,12 @@ export default function ChatListPage() {
 
     // 방 선택 핸들러
     function handleSelectRoom(room) {
-        navigateToRoom(room);
+        if (room.isPrivate) {
+            setSelectedRoom(room)
+            setIsPasswordModalOpen(true);
+        }else {
+            navigateToRoom(room);
+        }
     }
 
     // 방으로 이동
@@ -61,6 +69,16 @@ export default function ChatListPage() {
         }
     }
 
+    //비밀번호를 확인하고 방으로 이동
+    const handlePasswordSubmit = async (enteredPassword) => {
+        if (selectedRoom.password === enteredPassword) {
+            setIsPasswordModalOpen(false);
+            navigateToRoom(selectedRoom);
+        }else {
+            alert('비밀번호가 틀렸습니다.');
+        }
+    };
+
     // 새로운 방 추가 처리
     const handleAddRoom = async (newRoom) => {
         const room = {
@@ -72,6 +90,7 @@ export default function ChatListPage() {
             // 서버에서는 ownerID가 필요하지만, 클라이언트에서는 제공하지 않음
             nickName: newRoom.ownerNickname // 서버의 'ownerNickname'과 일치
         };
+
 
 
         try {
@@ -159,6 +178,15 @@ export default function ChatListPage() {
                     isOpen={isModalOpen}
                     onClose={() => setIsModalOpen(false)}
                     onSave={handleAddRoom}
+                />
+            )}
+
+            {/* 비밀번호 입력 모달 */}
+            {isPasswordModalOpen && (
+                <PasswordModal
+                    isOpen={isPasswordModalOpen}
+                    onClose={() => setIsPasswordModalOpen(false)}
+                    onSubmit={handlePasswordSubmit}
                 />
             )}
         </div>
