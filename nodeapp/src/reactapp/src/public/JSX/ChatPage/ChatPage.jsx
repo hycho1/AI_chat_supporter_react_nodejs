@@ -56,9 +56,12 @@ console.log('socket:::::::::::::::::::::::::',socket)
                         },
                     });
                 }
+            
+                
+
             })
-
-
+            // console.log("chatFrame 방장닉네임 :", ownerNickname)
+            // 서버에서 업데이트된 방 정보 받아오는 이벤트 리스너
             socket.current.on('room_updated', (updatedSettings) => {
                 console.log('Room settings updated :', updatedSettings);
                 setUpdatedRoomName(updatedSettings.name); // 변경된 방 이름 업데이트
@@ -73,21 +76,15 @@ console.log('socket:::::::::::::::::::::::::',socket)
                 ]);
             });
 
-            socket.current.on('newRoomInfo', (data) => {
-                console.log("newRoomInfo", data);
-                setRoomName(data.name);
-                setIsPrivate(data.isPrivate);
-                setMaxCount(data.maxCount);
-                setPassword(data.password);
-            });
+
+
 
         }
-        
         // 소켓 연결 해제
         return () => {
             socket.current.close();
         };
-    }, [currentUserName, roomName, navigate]);
+    }, [currentUserName, roomId]);
 
     useEffect(() => {
         // 방장 여부 설정
@@ -97,14 +94,14 @@ console.log('socket:::::::::::::::::::::::::',socket)
     const handleOpenModal = () => setShowModal(true);
     const handleCloseModal = () => setShowModal(false);
 
-    // // 방 정보 업데이트 핸들러
-    // const handleUpdateRoom = (updatedRoomDetails) => {
-    //     setRoomName(updatedRoomDetails.name);
-    //     setMaxCount(updatedRoomDetails.maxCount);
-    //     setPassword(updatedRoomDetails.password);
-    //     setIsPrivate(updatedRoomDetails.isPrivate);
-    // };
- 
+    // 방 정보 업데이트 핸들러
+    const handleUpdateRoom = (updatedRoomDetails) => {
+        setRoomName(updatedRoomDetails.name);
+        setMaxCount(updatedRoomDetails.maxCount);
+        setPassword(updatedRoomDetails.password);
+        setIsPrivate(updatedRoomDetails.isPrivate);
+    };
+
     return (
         <div className="chatPage">
             
@@ -135,7 +132,6 @@ console.log('socket:::::::::::::::::::::::::',socket)
                 <RoomSettingsModal
                     isOpen={showModal}
                     onClose={handleCloseModal}
-                    roomCount={roomCount}
                     roomDetails={{ 
                         name: roomName,
                         maxCount: maxCount,
@@ -144,7 +140,7 @@ console.log('socket:::::::::::::::::::::::::',socket)
                         ownerNickname: ownerNickname,
                         nickName: currentUserName
                     }}
-                    // onUpdate={handleUpdateRoom}
+                    onUpdate={handleUpdateRoom}
                     socket={socket}
                     isSocketConnected={isSocketConnected}
                 />
