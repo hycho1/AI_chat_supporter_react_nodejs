@@ -7,7 +7,7 @@ export default function MainPage() {
     const [nickName, setNickName] = useState('');
     const navigate = useNavigate();
     const inputRef = useRef(null);
-    const [ShowModal,setShowModal] =useState(false);
+    const [ShowalertModal,setShowAlertModal] =useState(false);
 
     useEffect(()=>{
         if(inputRef.current){
@@ -31,9 +31,9 @@ export default function MainPage() {
                 // const trimnickname = nickName.replace(/\s+/g,'');
 
                 if (result === 'exist') {
-                    setShowModal(true);
+                    setShowAlertModal(true);
                 } else if (result === 'non-existent') {
-                    navigate('/chatListPage', { state: {nickName:nickName} });
+                    navigate('/ChatPage', { state: {nickName:nickName} });
                 }
                 // console.log(trimnickname);
                 
@@ -60,6 +60,8 @@ export default function MainPage() {
         <div className="pullpage">
             <div className="MainPage">
                 <div className="Main">
+                <h1>AI Chat Support</h1>
+                <h2>Transforming<br/>Conversations with<br/>Ai - Powered Support</h2>
                     <input 
                         type='text' 
                         name='nickName'
@@ -71,11 +73,11 @@ export default function MainPage() {
                     />
                     <button onClick={handleNickNameSubmit}>Login</button>
                 </div>
-                {ShowModal && (
+                {ShowalertModal && (
                     <ModalAlert
                         setNickName={setNickName}
-                        isOpen={ShowModal}
-                        onClose={()=>setShowModal(false)}
+                        isOpen={ShowalertModal}
+                        onClose={()=>setShowAlertModal(false)}
                         modalClose={modalClose}
                     />
                 )}
