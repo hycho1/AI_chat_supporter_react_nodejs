@@ -4,56 +4,67 @@ import io from 'socket.io-client';
 import InfoBar from "./InfoBar";
 import MessageContainer from "./MessageContainer";
 import TextContainer from "./TextContainer";
-import { useNavigate } from "react-router-dom";
+import RoomSettingsModal from './RoomSettingsModal';
 
-export default function ChatFrame({ roomName, nickName, setOwnerNickName, socket}) {
-    const [messages, setMessages] = useState([]);
+
+export default function ChatFrame({setIsSocketConnected,location, UserName, room, socket, roomCount, setRoomCount, roomName, setRoomName, password, setPassword, isPrivate, setIsPrivate, maxCount, setMaxCount}) {
     const [onsearchtext, setonSearchText] = useState('');
-    const [roomCount, setRoomCount] = useState(0); // roomCount 상태 추가
-    const [isPrivate, setIsPrivate] = useState(false); // 방의 비공개 여부 추가
-    const [maxCount, setMaxCount] = useState(10); // 최대 인원수 추가
-    const [updatedRoomName, setUpdatedRoomName] = useState(roomName); // 방 이름 상태
-    const [password, setPassword] = useState(''); // 비밀번호 상태
-    //const socket = useRef(null);
-    const navigate = useNavigate(); // useNavigate 훅을 사용하여 페이지 이동
+    const [isOwner, setIsOwner] = useState(false);
+    const [ownerNickname, setOwnerNickName] = useState('');
+    const [showModal, setShowModal] = useState(false);
+    const [messages, setMessages] = useState([]);
+    
     
 
-
+    const roomId = location.state?.roomId; // roomId를 사용
+    
+    console.log("ChatFrame,useeffect");
+    
     useEffect(() => {
-
-
-        if(socket){
-            console.log(socket);
-            // 서버로부터 사용자 수(roomCount) 업데이트 받기
+        if(room && !socket.current){
+            if(room.count < room.maxCount){
+                socket.current = io('http://localhost:5050');
+                socket.current.on('connect', () => {
+                socket.current.emit('enter_room', UserName, room.name);
+                setIsSocketConnected(true);
+            })
+            }else{
+                alert('방이 꽉찼습니다');
+                return;
+            }
+            
+            console.log(socket.current);
+            
             socket.current.on('roomCountUpdate', (count) => {
                 setRoomCount(count); // roomCount 업데이트
             });
+            
 
             // 서버에서 방장 정보를 받아오는 이벤트 리스너
             socket.current.on('room_details', ( roomDetails ) => {
-                console.log("서버에서 받은 roomDetails", roomDetails);
-                console.log("서버에서 받은 roomDetails.room.ownerNickName:", roomDetails.ownerNickname);
                 setOwnerNickName(roomDetails.ownerNickname);  // 부모 컴포넌트로 ownerNickname 전달
                 setMaxCount(roomDetails.maxCount);
-
             });
+
 
             socket.current.on('roomDeleted', (data) => {
                 console.log("서버에게 받은 roomDeleted 정보 :",data);
-                return () => {
-                    socket.current.disconnect();
-                };
+                if (data) {
+                    alert("방장이 방을 삭제하였습니다.");
+                }
             })
-            // console.log("chatFrame 방장닉네임 :", ownerNickname)
-        
+            
+
             // 서버에서 업데이트된 방 정보 받아오는 이벤트 리스너
+            
+            
             socket.current.on('room_updated', (updatedSettings) => {
                 console.log('Room settings updated :', updatedSettings);
-                setUpdatedRoomName(updatedSettings.name); // 변경된 방 이름 업데이트
                 setMaxCount(updatedSettings.maxCount);   // 변경된 최대 인원수 업데이트
                 setIsPrivate(updatedSettings.isPrivate); //변경된 비공개 여부 업데이트
                 setPassword(updatedSettings.password); //변경된 비밀번호 업데이트
             })
+
 
             socket.current.on('reply', (reply_message, nickName) => {
                 setMessages(prevMessages => [
@@ -62,10 +73,36 @@ export default function ChatFrame({ roomName, nickName, setOwnerNickName, socket
                 ]);
             });
 
-            
-            
+
+
+
         }
-    }, [nickName, roomName, setOwnerNickName, navigate, socket]);
+        // 소켓 연결 해제
+        return ()=>{
+            if(socket.current){
+                socket.current.close();
+                socket.current =null;
+            }
+        };
+    }, [UserName, roomId, room]);
+
+    useEffect(() => {
+        // 방장 여부 설정
+        setIsOwner(UserName === ownerNickname);
+    }, [UserName, ownerNickname]);
+
+
+    // 방 정보 업데이트 핸들러
+    const handleUpdateRoom = (updatedRoomDetails) => {
+        setRoomName(updatedRoomDetails.name);
+        setMaxCount(updatedRoomDetails.maxCount);
+        setPassword(updatedRoomDetails.password);
+        setIsPrivate(updatedRoomDetails.isPrivate);
+    };
+    const handleCloseModal = () => setShowModal(false);
+
+    
+
 
     return (
         <div className="ChatFrame">
@@ -81,12 +118,32 @@ export default function ChatFrame({ roomName, nickName, setOwnerNickName, socket
                 messages={messages}
                 onsearchtext={onsearchtext}
             />
-            <TextContainer 
+            <TextContainer
                 socket={socket} 
                 setMessages={setMessages} 
-                nickName={nickName} 
-                roomName={roomName || updatedRoomName} // 변경된 방 이름 전달  
+                nickName={UserName} 
+                roomName={roomName} // 변경된 방 이름 전달
+                IsOwner={isOwner}
             />
+            {isOwner && (
+                <RoomSettingsModal
+                    isOpen={showModal}
+                    onClose={handleCloseModal}
+                    onUpdate={handleUpdateRoom}
+                    setShowModal={setShowModal}
+                    socket={socket}
+                    roomDetails={{ 
+                        name: roomName,
+                        maxCount: maxCount,
+                        password: password,
+                        isPrivate: isPrivate,
+                        ownerNickname: ownerNickname,
+                        nickName: UserName
+                    }}
+                    
+                />
+        
+            )}
         </div>
     );
 }
