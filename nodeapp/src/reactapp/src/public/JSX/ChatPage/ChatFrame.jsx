@@ -7,7 +7,9 @@ import TextContainer from "./TextContainer";
 import RoomSettingsModal from './RoomSettingsModal';
 
 
-export default function ChatFrame({setIsSocketConnected,location, UserName, room, socket, roomCount, setRoomCount, roomName, setRoomName, password, setPassword, isPrivate, setIsPrivate, maxCount, setMaxCount}) {
+export default function ChatFrame({setIsSocketConnected,location, UserName, room, socket, roomCount,
+                                   setRoomCount, roomName, setRoomName, password, setPassword, isPrivate, 
+                                   setIsPrivate, maxCount, setMaxCount}) {
     const [onsearchtext, setonSearchText] = useState('');
     const [isOwner, setIsOwner] = useState(false);
     const [ownerNickname, setOwnerNickName] = useState('');
@@ -107,7 +109,7 @@ export default function ChatFrame({setIsSocketConnected,location, UserName, room
     return (
         <div className="ChatFrame">
             <InfoBar
-                roomName={roomName} // 업데이트된 . 방이름 사용
+                roomName={roomName} // 업데이트된 방이름 사용
                 setonsearchtext={setonSearchText}
                 roomCount={roomCount}
                 maxCount = {maxCount}      // 업데이트된 최대 인원수 사용
@@ -124,6 +126,8 @@ export default function ChatFrame({setIsSocketConnected,location, UserName, room
                 nickName={UserName} 
                 roomName={roomName} // 변경된 방 이름 전달
                 IsOwner={isOwner}
+                openSettingsModal ={()=> setShowModal(true)} // 모달 열기 함수 전달
+                
             />
             {isOwner && (
                 <RoomSettingsModal

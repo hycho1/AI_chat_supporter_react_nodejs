@@ -2,11 +2,20 @@ import React from "react"
 import '../../CSS/TextContainer.css';
 import { useState,useEffect,useRef } from "react";
 
-export default function TextContainer({ socket, setMessages, nickName, roomName, isOwner,setShowModal}) {
+export default function TextContainer({ socket, setMessages, nickName, roomName, IsOwner, openSettingsModal}) {
     
     const [message, setMessage] = useState('');
     const [scrollon,setscrollon] = useState(false);
     const textareaRef = useRef(null);
+    
+    const handleSettingsClick = () => {
+        if (IsOwner) {
+            console.log("IsOwner : ", IsOwner);
+            openSettingsModal(); // 방장일 경우 모달 열기
+        }else {
+            alert('방장만 방 설정을 수정할 수 있습니다.');
+        }
+    };
 
     useEffect(()=>{
         const textarea = textareaRef.current;
@@ -56,13 +65,13 @@ export default function TextContainer({ socket, setMessages, nickName, roomName,
               ]);
         }
     }
-    const handleOpenModal = () => setShowModal(true);
+    // const handleOpenModal = () => setShowModal(true);
     
 
     return (
         <div className="TextContainer">
-                {isOwner ? (
-                    <button onClick={handleOpenModal} className="settingsButton">
+                {IsOwner ? (
+                    <button onClick={handleSettingsClick} className="settingsButton">
                         방 설정
                     </button>
                 ) : <button>노방장</button>}
